@@ -11,8 +11,8 @@ import (
 )
 
 type Session struct {
-	StartTime int `json:"startTime"`
-	Duration  int `json:"duration"`
+	StartTime int64 `json:"startTime"`
+	Duration  int   `json:"duration"`
 }
 
 type Stats struct {
@@ -34,6 +34,9 @@ func onReady() {
 	// Initialize the stats
 	stats, _ = loadStats()
 
+	// Create a new session object in stats.json in the "sessions" array
+	newSession := Session{StartTime: time.Now().Unix(), Duration: 0}
+
 	// Start the timer
 	timer := time.NewTicker(1 * time.Second)
 	go func() {
@@ -42,7 +45,28 @@ func onReady() {
 			case <-timer.C:
 				// Increment the usage times
 				stats.TotalUsageTime++
-				stats.SessionStartTime++
+
+				// Create a new session object if doesnt exist
+				created := 0
+				if len(stats.Sessions) == 0 && created == 0 {
+					session := Session{StartTime: time.Now().Unix(), Duration: 0}
+					stats.Sessions = append(stats.Sessions, session)
+				}
+				// Create a new session object if last session start time + duration is before now
+				lastSession := stats.Sessions[len(stats.Sessions)-1]
+				if lastSession.StartTime+int64(lastSession.Duration) <= time.Now().Unix() && created == 0 {
+					session := Session{StartTime: time.Now().Unix(), Duration: 0}
+					stats.Sessions = append(stats.Sessions, session)
+					created = 1
+				}
+
+				// Update the duration of the current session
+				timeElapsed := time.Since(time.Unix(newSession.StartTime, 0))
+				newSession.Duration = int(timeElapsed.Seconds())
+
+				// Append the new session to the last session in sessions array in stats
+				stats.Sessions[len(stats.Sessions)-1] = newSession
+
 				err := saveStats(stats)
 				if err != nil {
 					fmt.Println("Error saving stats:", err)
@@ -51,7 +75,7 @@ func onReady() {
 				// Update the tooltip with the usage time
 				tooltip := fmt.Sprintf("Total Usage Time: %s\nSession Time: %s",
 					formatTime(stats.TotalUsageTime),
-					formatTime(stats.SessionStartTime))
+					formatTime(getCurrentSessionTime()))
 				systray.SetTooltip(tooltip)
 			case <-quit:
 				timer.Stop()
@@ -124,7 +148,13 @@ func getTotalUsageTime() int {
 
 func getCurrentSessionTime() int {
 	// Get the time elapsed in the current session
-	return stats.SessionStartTime
+	if len(stats.Sessions) > 0 {
+		// create a new session object for every new session instead of updating the same one
+		session := stats.Sessions[len(stats.Sessions)-1]
+		sessionTime := time.Now().Unix() - session.StartTime
+		return int(sessionTime)
+	}
+	return 0
 }
 
 func getIcon() []byte {
