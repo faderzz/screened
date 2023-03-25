@@ -10,9 +10,14 @@ import (
 	"github.com/getlantern/systray"
 )
 
+type Session struct {
+	StartTime int `json:"startTime"`
+	Duration  int `json:"duration"`
+}
+
 type Stats struct {
-	TotalUsageTime   int `json:"totalUsageTime"`
-	SessionStartTime int `json:"sessionStartTime"`
+	TotalUsageTime int       `json:"totalUsageTime"`
+	Sessions       []Session `json:"sessions"`
 }
 
 var (
