@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/getlantern/systray"
 )
 
@@ -22,37 +19,6 @@ var (
 	quit  chan struct{}
 	stats Stats
 )
-
-func newWatcher(path string) (*fsnotify.Watcher, error) {
-	// Create a new watcher for the given path
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, err
-	}
-	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			err = watcher.Add(path)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return watcher, nil
-}
-
-func getHomeDir() string {
-	if os.Getenv("HOME") != "" {
-		return os.Getenv("HOME")
-	}
-	return os.Getenv("USERPROFILE")
-}
 
 func onReady() {
 	// Set up the systray icon and menu
@@ -179,42 +145,8 @@ func main() {
 	// Set up the quit channel
 	quit = make(chan struct{})
 
-	// Set up the watcher for the home directory
-	homeDir := getHomeDir()
-	watcher, err := newWatcher(homeDir)
-	if err != nil {
-		fmt.Println("Error setting up watcher:", err)
-		return
-	}
-	defer watcher.Close()
-
 	// Set up the systray
 	go systray.Run(onReady, onExit)
-
-	// Watch for filesystem events
-	go func() {
-		for {
-			select {
-			case event := <-watcher.Events:
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					// If a file is written to, recompile and run the program
-					fmt.Println("File modified:", event.Name)
-					cmd := exec.Command("go", "run", os.Args[0])
-					err := cmd.Start()
-					if err != nil {
-						fmt.Println("Error recompiling program:", err)
-					} else {
-						fmt.Println("Recompiling program...")
-						cmd.Wait()
-					}
-				}
-			case err := <-watcher.Errors:
-				fmt.Println("Error watching files:", err)
-			case <-quit:
-				return
-			}
-		}
-	}()
 
 	// Wait for the program to exit
 	<-quit

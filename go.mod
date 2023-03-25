@@ -2,10 +2,7 @@ module yup
 
 go 1.20
 
-require (
-	github.com/fsnotify/fsnotify v1.6.0
-	github.com/getlantern/systray v1.2.1
-)
+require github.com/getlantern/systray v1.2.1
 
 require (
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
