@@ -34,8 +34,10 @@ func onReady() {
 	// Initialize the stats
 	stats, _ = loadStats()
 
-	// Create a new session object in stats.json in the "sessions" array
-	newSession := Session{StartTime: time.Now().Unix(), Duration: 0}
+	// newSession := Session{StartTime: time.Now().Unix(), Duration: 0}
+
+	// validation
+	created := 0
 
 	// Start the timer
 	timer := time.NewTicker(1 * time.Second)
@@ -47,10 +49,10 @@ func onReady() {
 				stats.TotalUsageTime++
 
 				// Create a new session object if doesnt exist
-				created := 0
 				if len(stats.Sessions) == 0 && created == 0 {
 					session := Session{StartTime: time.Now().Unix(), Duration: 0}
 					stats.Sessions = append(stats.Sessions, session)
+					created = 1
 				}
 				// Create a new session object if last session start time + duration is before now
 				lastSession := stats.Sessions[len(stats.Sessions)-1]
@@ -60,12 +62,11 @@ func onReady() {
 					created = 1
 				}
 
-				// Update the duration of the current session
-				timeElapsed := time.Since(time.Unix(newSession.StartTime, 0))
-				newSession.Duration = int(timeElapsed.Seconds())
+				// lastSession.duration = time since lastSession.startTime
+				stats.Sessions[len(stats.Sessions)-1].Duration = int(time.Now().Unix() - lastSession.StartTime)
 
 				// Append the new session to the last session in sessions array in stats
-				stats.Sessions[len(stats.Sessions)-1] = newSession
+				// stats.Sessions[len(stats.Sessions)-1] = newSession
 
 				err := saveStats(stats)
 				if err != nil {
@@ -149,7 +150,6 @@ func getTotalUsageTime() int {
 func getCurrentSessionTime() int {
 	// Get the time elapsed in the current session
 	if len(stats.Sessions) > 0 {
-		// create a new session object for every new session instead of updating the same one
 		session := stats.Sessions[len(stats.Sessions)-1]
 		sessionTime := time.Now().Unix() - session.StartTime
 		return int(sessionTime)
