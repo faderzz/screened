@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -100,51 +99,34 @@ func onExit() {
 }
 
 func loadStats() (Stats, error) {
-	// Load the stats from the stats file
 	statsFile := "stats.json"
-	data, err := ioutil.ReadFile(statsFile)
+	data, err := os.ReadFile(statsFile)
 	if err != nil {
-		if os.IsNotExist(err) {
-			// stats file doesn't exist yet, create a new one
-			stats := Stats{}
-			err = saveStats(stats)
-			if err != nil {
-				return Stats{}, err
-			}
-
-			// return the default stats (with zero usage times)
-			return Stats{}, nil
-		}
 		return Stats{}, err
 	}
+
+	var stats Stats
 	err = json.Unmarshal(data, &stats)
 	if err != nil {
 		return Stats{}, err
 	}
+
 	return stats, nil
 }
 
 func saveStats(stats Stats) error {
-	// Save the stats to the stats file
+	statsFile := "stats.json"
 	data, err := json.Marshal(stats)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile("stats.json", data, 0644)
+
+	err = os.WriteFile(statsFile, data, 0644)
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
-func getTotalUsageTime() int {
-	// Get the total usage time from the stats file
-	stats, err := loadStats()
-	if err != nil {
-		fmt.Println("Error loading stats:", err)
-		return 0
-	}
-	return stats.TotalUsageTime
+	return nil
 }
 
 func getCurrentSessionTime() int {
@@ -160,7 +142,7 @@ func getCurrentSessionTime() int {
 func getIcon() []byte {
 	// Load the icon from the file system
 	iconFile := "icon.ico"
-	data, err := ioutil.ReadFile(iconFile)
+	data, err := os.ReadFile(iconFile)
 	if err != nil {
 		fmt.Println("Error loading icon:", err)
 		return []byte{}
