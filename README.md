@@ -9,4 +9,5 @@ WIP - This is my first Go project. It is not meant for daily use as it is mainly
  - [ ] Switch to database
  - [ ] Remove data older than 3 months
  - [ ] Monitoring screen usage for each application
+ - [ ] GUI for viewing usage
 
