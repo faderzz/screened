@@ -35,7 +35,7 @@ func onReady() {
 
 	// newSession := Session{StartTime: time.Now().Unix(), Duration: 0}
 
-	// validation
+	// Used to check if new session was created in the timer loop or it will overwrite the last session
 	created := 0
 
 	// Start the timer
